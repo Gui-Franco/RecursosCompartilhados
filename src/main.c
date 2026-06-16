@@ -9,7 +9,8 @@
 
 volatile int saldo_vitrine = 0;
 
-K_SEM_DEFINE(vitrine_sem, 1, 1);
+K_SEM_DEFINE(vitrine_sem, 10, 10);
+K_SEM_DEFINE(paes_sem, 0, 10);
 
 void Padeiro(void *arg1, void *arg2, void *arg3)
 {
@@ -17,12 +18,12 @@ void Padeiro(void *arg1, void *arg2, void *arg3)
         //Padeiro produz um pão a cada 1 segundo
         k_sleep(K_SECONDS(1));
 
-        k_sem_take(&vitrine_sem, K_FOREVER); // Trava o semáforo para acessar a vitrine
+        k_sem_take(&vitrine_sem, K_FOREVER); // Verifica se tem espaço na vitrine
 
         saldo_vitrine++; // Adiciona um pão à vitrine
         printk("Padeiro produziu um pão. Saldo atual na vitrine: % d\n", saldo_vitrine);
 
-        k_sem_give(&vitrine_sem); // Libera o semáforo para permitir que o cliente compre um pão   
+        k_sem_give(&paes_sem); // Avisa que tem pão novo disponivel   
     }
 }
 
@@ -32,12 +33,12 @@ void Cliente(void *arg1, void *arg2, void *arg3)
         //Cliente compra um pão a cada 1.5 segundo
         k_sleep(K_MSEC(1500)); 
 
-        k_sem_take(&vitrine_sem, K_FOREVER); // Trava o semáforo para acessar a vitrine
+        k_sem_take(&paes_sem, K_FOREVER); // Verifica se tem pão na vitrine (Para comprar > 0)
 
         saldo_vitrine--; // Cliente compra um pão da vitrine
         printk("Cliente comprou um pão. Saldo atual na vitrine: % d\n", saldo_vitrine);
     
-        k_sem_give(&vitrine_sem); // Libera o semáforo para permitir que o padeiro produza mais pães
+        k_sem_give(&vitrine_sem); // Avisa
     }
 }
 
